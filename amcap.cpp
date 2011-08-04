@@ -48,8 +48,11 @@ HINSTANCE ghInstApp=0;
 HACCEL ghAccel=0;
 HFONT  ghfontApp=0;
 TEXTMETRIC gtm={0};
-TCHAR gszAppName[]=TEXT("AMCAP");
+TCHAR gszAppName[]=TEXT("AMCap");
+DWORD ghwndStyle = (WS_OVERLAPPEDWINDOW | WS_SYSMENU | WS_VISIBLE) & ~(WS_THICKFRAME);
 HWND ghwndApp=0, ghwndStatus=0;
+HMENU ghmenuApp=0;
+BOOL bIsZoomed;
 HDEVNOTIFY ghDevNotify=0;
 PUnregisterDeviceNotification gpUnregisterDeviceNotification=0;
 PRegisterDeviceNotification gpRegisterDeviceNotification=0;
@@ -88,6 +91,8 @@ struct _capstuff
     IMoniker *pmVideo;
     IMoniker *pmAudio;
     double FrameRate;
+	int CaptureWidth;
+	int CaptureHeight;
     BOOL fWantPreview;
     long lCapStartTime;
     long lCapStopTime;
@@ -194,6 +199,7 @@ void AddDevicesToMenu();
 void ChooseDevices(TCHAR *szVideo, TCHAR *szAudio);
 void ChooseDevices(IMoniker *pmVideo, IMoniker *pmAudio);
 void ChooseFrameRate();
+void ReadVideoPin();
 
 BOOL InitCapFilters();
 void FreeCapFilters();
@@ -201,6 +207,8 @@ void FreeCapFilters();
 BOOL StopPreview();
 BOOL StartPreview();
 BOOL StopCapture();
+void FullScreen();
+void ResizeChild(int sw, int sh);
 
 DWORDLONG GetSize(LPCTSTR tach);
 void MakeMenuOptions();
@@ -270,7 +278,7 @@ BOOL AppInit(HINSTANCE hInst, HINSTANCE hPrev, int sw)
         cls.hIcon          = LoadIcon(hInst, TEXT("AMCapIcon"));
         cls.lpszMenuName   = MAKEINTATOM(ID_APP);
         cls.lpszClassName  = MAKEINTATOM(ID_APP);
-        cls.hbrBackground  = (HBRUSH)(COLOR_WINDOW + 1);
+        cls.hbrBackground  = (HBRUSH)GetStockObject(BLACK_BRUSH);
         cls.hInstance      = hInst;
         cls.style          = CS_BYTEALIGNCLIENT | CS_VREDRAW | CS_HREDRAW | CS_DBLCLKS;
         cls.lpfnWndProc    = (WNDPROC) AppWndProc;
@@ -292,7 +300,7 @@ BOOL AppInit(HINSTANCE hInst, HINSTANCE hPrev, int sw)
                             MAKEINTATOM(ID_APP),    // Class name
                             gszAppName,             // Caption
                             // Style bits
-                            WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN,
+							ghwndStyle,
                             CW_USEDEFAULT, 0,       // Position
                             320,300,                // Size
                             (HWND)NULL,             // Parent window (no parent)
@@ -360,6 +368,8 @@ BOOL AppInit(HINSTANCE hInst, HINSTANCE hPrev, int sw)
     int units_per_frame = GetProfileInt(TEXT("annie"), TEXT("FrameRate"), 666667);  // 15fps
     gcap.FrameRate = 10000000. / units_per_frame;
     gcap.FrameRate = (int)(gcap.FrameRate * 100) / 100.;
+	gcap.CaptureWidth  = GetProfileInt(TEXT("annie"), TEXT("CaptureWidth"), 640);
+	gcap.CaptureHeight  = GetProfileInt(TEXT("annie"), TEXT("CaptureHeight"), 360);
 
     // reasonable default
     if(gcap.FrameRate <= 0.)
@@ -721,7 +731,17 @@ LONG WINAPI  AppWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     StartPreview();
                 }
             }
+			switch(LOWORD( wParam ))
+			{
+				case VK_ESCAPE:
+					FullScreen();
+					break;
+			}
             break;
+
+		case WM_LBUTTONDBLCLK:
+			FullScreen();
+			break;
 
         case WM_PAINT:
             hdc = BeginPaint(hwnd,&ps);
@@ -762,12 +782,14 @@ LONG WINAPI  AppWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             cxBorder = GetSystemMetrics(SM_CXBORDER);
             cyBorder = GetSystemMetrics(SM_CYBORDER);
             cy = statusGetHeight() + cyBorder;
-            MoveWindow(ghwndStatus, -cxBorder, rc.bottom - cy,
-                rc.right + (2 * cxBorder), cy + cyBorder, TRUE);
-            rc.bottom -= cy;
+			if (GetWindowLong(ghwndStatus, GWL_STYLE) & WS_VISIBLE)
+			{
+				MoveWindow(ghwndStatus, -cxBorder, rc.bottom - cy,
+					rc.right + (2 * cxBorder), cy + cyBorder, TRUE);
+					rc.bottom -= cy;
+			}
             // this is the video renderer window showing the preview
-            if(gcap.pVW)
-                gcap.pVW->SetWindowPosition(0, 0, rc.right, rc.bottom);
+                ResizeChild(rc.right, rc.bottom);
             break;
 
         case WM_FGNOTIFY:
@@ -920,6 +942,7 @@ void ResizeWindow(int w, int h)
 
     rcC.right = w;
     rcC.bottom = h;
+	
     SetWindowPos(ghwndApp, NULL, 0, 0, rcC.right + xExtra,
         rcC.bottom + yExtra, SWP_NOZORDER | SWP_NOMOVE);
 
@@ -931,8 +954,65 @@ void ResizeWindow(int w, int h)
         ResizeWindow(w,h);
 
     gnRecurse--;
+
+	ResizeChild(rcC.right + xExtra, rcC.bottom + yExtra);
 }
 
+void ResizeChild(int sw, int sh)
+{
+	int nw = 0, nh = 0, w = 0, h = 0, l = 0, t = 0;
+	
+	ReadVideoPin();
+
+	if ((float)sw/(float)sh > (float)gcap.CaptureWidth/(float)gcap.CaptureHeight)
+	{
+		nw = sh * ((float)gcap.CaptureWidth/(float)gcap.CaptureHeight);
+		int hspace = sw - nw;
+		l = hspace / 2;
+		w = nw;
+		h = sh;
+	}
+	else
+	{
+		nh = sw / ((float)gcap.CaptureWidth/(float)gcap.CaptureHeight);
+		int vspace = sh - nh;
+		t = vspace / 2;
+		h = nh;
+		w = sw;
+	}
+
+	if(gcap.pVW)
+		gcap.pVW->SetWindowPosition(l, t, w, h);
+}
+
+void FullScreen()
+{
+	if (GetWindowLong(ghwndApp, GWL_STYLE) & WS_OVERLAPPEDWINDOW)
+	{
+		// save window state
+		bIsZoomed = IsZoomed(ghwndApp);
+		ghmenuApp = GetMenu(ghwndApp);
+		ShowWindow(ghwndStatus, SW_HIDE);
+		SetMenu(ghwndApp, NULL);
+		if (bIsZoomed) ShowWindow(ghwndApp, SW_RESTORE);
+		SetWindowLong(ghwndApp, GWL_STYLE, WS_POPUP);
+		ShowWindow(ghwndApp, SW_SHOWMAXIMIZED);				
+		ShowCursor(FALSE);		
+	}
+	else
+	{
+		ShowWindow(ghwndStatus, SW_SHOW);
+		SetMenu(ghwndApp,ghmenuApp);		
+		ShowWindow(ghwndApp, SW_RESTORE);
+		SetWindowLong(ghwndApp, GWL_STYLE, ghwndStyle);
+		if (bIsZoomed) ShowWindow(ghwndApp, SW_MAXIMIZE);
+		ShowCursor(TRUE);
+		// Trigger WM_SIZE message
+		RECT Rc;
+		GetWindowRect(ghwndApp, &Rc);
+		SetWindowPos(ghwndApp, HWND_TOP, Rc.left,Rc.top, (Rc.right-Rc.left),(Rc.bottom-Rc.top), SWP_FRAMECHANGED);
+	}
+}
 
 // Tear down everything downstream of a given filter
 void NukeDownstream(IBaseFilter *pf)
@@ -1145,6 +1225,25 @@ BOOL InitCapFilters()
     gcap.fCapAudioIsRelevant = TRUE;
 
     AM_MEDIA_TYPE *pmt;
+
+	// set inital capture format
+	hr = gcap.pVSC->GetFormat(&pmt);
+
+    // DV capture does not use a VIDEOINFOHEADER
+    if(hr == NOERROR)
+    {
+        if(pmt->formattype == FORMAT_VideoInfo)
+        {
+            VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)pmt->pbFormat;
+            pvi->AvgTimePerFrame = (LONGLONG)(10000000 / gcap.FrameRate);
+			pvi->bmiHeader.biWidth = gcap.CaptureWidth;
+			pvi->bmiHeader.biHeight = gcap.CaptureHeight;
+
+            hr = gcap.pVSC->SetFormat(pmt);
+            if(hr != NOERROR)
+                ErrMsg(TEXT("%x: Cannot set frame rate or resolution for preview"), hr);
+        }
+    }
 
     // default capture format
     if(gcap.pVSC && gcap.pVSC->GetFormat(&pmt) == S_OK)
@@ -1803,6 +1902,7 @@ BOOL BuildPreviewGraph()
         RECT rc;
         gcap.pVW->put_Owner((OAHWND)ghwndApp);    // We own the window now
         gcap.pVW->put_WindowStyle(WS_CHILD);    // you are now a child
+		gcap.pVW->put_MessageDrain((OAHWND)ghwndApp);
 
         // give the preview window all our space but where the status bar is
         GetClientRect(ghwndApp, &rc);
@@ -1810,32 +1910,8 @@ BOOL BuildPreviewGraph()
         cy = statusGetHeight() + cyBorder;
         rc.bottom -= cy;
 
-        gcap.pVW->SetWindowPosition(0, 0, rc.right, rc.bottom); // be this big
+        ResizeChild(rc.right, rc.bottom);
         gcap.pVW->put_Visible(OATRUE);
-    }
-
-    // now tell it what frame rate to capture at.  Just find the format it
-    // is capturing with, and leave everything alone but change the frame rate
-    // No big deal if it fails.  It's just for preview
-    // !!! Should we then talk to the preview pin?
-    if(gcap.pVSC && gcap.fUseFrameRate)
-    {
-        hr = gcap.pVSC->GetFormat(&pmt);
-
-        // DV capture does not use a VIDEOINFOHEADER
-        if(hr == NOERROR)
-        {
-            if(pmt->formattype == FORMAT_VideoInfo)
-            {
-                VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)pmt->pbFormat;
-                pvi->AvgTimePerFrame = (LONGLONG)(10000000 / gcap.FrameRate);
-
-                hr = gcap.pVSC->SetFormat(pmt);
-                if(hr != NOERROR)
-                    ErrMsg(TEXT("%x: Cannot set frame rate for preview"), hr);
-            }
-            DeleteMediaType(pmt);
-        }
     }
 
     // make sure we process events while we're previewing!
@@ -4372,10 +4448,33 @@ DWORDLONG GetSize(LPCTSTR tach)
     return dwlSize;
 }
 
+void ReadVideoPin()
+{
+	// read video pin settings
+	HRESULT hr=S_OK;
+	AM_MEDIA_TYPE *pmt;
+	hr = gcap.pVSC->GetFormat(&pmt);
+
+    // DV capture does not use a VIDEOINFOHEADER
+    if(hr == NOERROR)
+    {
+        if(pmt->formattype == FORMAT_VideoInfo)
+        {
+            VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER *)pmt->pbFormat;
+			gcap.FrameRate = (LONGLONG)(10000000 / pvi->AvgTimePerFrame);
+			gcap.CaptureWidth = pvi->bmiHeader.biWidth;
+			gcap.CaptureHeight = pvi->bmiHeader.biHeight;
+        }
+    }
+	DeleteMediaType(pmt);
+}
+
 void OnClose()
 {
     TCHAR szBuf[512];
     WCHAR *wszDisplayName = NULL;
+
+	ReadVideoPin();
 
     // Unregister device notifications
     if(ghDevNotify != NULL)
@@ -4439,6 +4538,12 @@ void OnClose()
     // Save the integer settings
     wsprintf(szBuf, TEXT("%d"), (int)(10000000 / gcap.FrameRate));
     WriteProfileString(TEXT("annie"), TEXT("FrameRate"), szBuf);
+
+	wsprintf(szBuf, TEXT("%d"), gcap.CaptureWidth);
+	WriteProfileString(TEXT("annie"), TEXT("CaptureWidth"), szBuf);
+
+	wsprintf(szBuf, TEXT("%d"), gcap.CaptureHeight);
+	WriteProfileString(TEXT("annie"), TEXT("CaptureHeight"), szBuf);
 
     wsprintf(szBuf, TEXT("%d"), gcap.fUseFrameRate);
     WriteProfileString(TEXT("annie"), TEXT("UseFrameRate"), szBuf);
