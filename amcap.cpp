@@ -686,7 +686,7 @@ LONG WINAPI  AppWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 {
                     IMonRelease(gcap.rgpmVideoMenu[i]);
                 }
-                for(i = 0; i < NUMELMS(gcap.rgpmAudioMenu); i++)
+                for(int i = 0; i < NUMELMS(gcap.rgpmAudioMenu); i++)
                 {
                         IMonRelease(gcap.rgpmAudioMenu[i]);
                 }
@@ -2790,7 +2790,7 @@ void AddDevicesToMenu()
     {
         IMonRelease(gcap.rgpmVideoMenu[i]);
     }
-    for(i = 0; i < NUMELMS(gcap.rgpmAudioMenu); i++)
+    for(int i = 0; i < NUMELMS(gcap.rgpmAudioMenu); i++)
     {
         IMonRelease(gcap.rgpmAudioMenu[i]);
     }

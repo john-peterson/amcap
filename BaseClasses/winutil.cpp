@@ -2101,7 +2101,7 @@ HRESULT CImagePalette::MakeIdentityPalette(PALETTEENTRY *pEntry,INT iColours, LP
     // And likewise compare against the last ten entries
 
     Result = GetSystemPaletteEntries(hdc,PalHiStart,PalLoCount,SystemEntries);
-    for (Count = 0;Count < Result;Count++) {
+    for (int Count = 0;Count < Result;Count++) {
         if (INT(Count) + PalHiStart < iColours) {
             if (SystemEntries[Count].peRed != pEntry[PalHiStart + Count].peRed ||
                     SystemEntries[Count].peGreen != pEntry[PalHiStart + Count].peGreen ||
@@ -2120,7 +2120,7 @@ HRESULT CImagePalette::MakeIdentityPalette(PALETTEENTRY *pEntry,INT iColours, LP
 
     // Set the non VGA entries so that GDI doesn't map them
 
-    for (Count = PalLoCount;INT(Count) < min(PalHiStart,iColours);Count++) {
+    for (int Count = PalLoCount;INT(Count) < min(PalHiStart,iColours);Count++) {
         pEntry[Count].peFlags = PC_NOCOLLAPSE;
     }
     return NOERROR;

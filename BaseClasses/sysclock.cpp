@@ -20,7 +20,7 @@
    function when it is asked to create a CLSID_SystemClock object */
 
 CFactoryTemplate g_Templates[1] = {
-    {&CLSID_SystemClock, CSystemClock::CreateInstance}
+    {(const WCHAR *)CSystemClock::CreateInstance, &CLSID_SystemClock}
 };
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
