@@ -733,6 +733,9 @@ LONG WINAPI  AppWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
 			switch(LOWORD( wParam ))
 			{
+				case VK_SPACE:
+					SendMessage(hwnd, WM_COMMAND, MAKEWPARAM(MENU_PREVIEW, 0), 0);
+					break;
 				case VK_ESCAPE:
 					FullScreen();
 					break;
@@ -997,7 +1000,8 @@ void FullScreen()
 		if (bIsZoomed) ShowWindow(ghwndApp, SW_RESTORE);
 		SetWindowLong(ghwndApp, GWL_STYLE, WS_POPUP);
 		ShowWindow(ghwndApp, SW_SHOWMAXIMIZED);				
-		ShowCursor(FALSE);		
+		ShowCursor(FALSE);
+		SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
 	}
 	else
 	{
@@ -1007,6 +1011,7 @@ void FullScreen()
 		SetWindowLong(ghwndApp, GWL_STYLE, ghwndStyle);
 		if (bIsZoomed) ShowWindow(ghwndApp, SW_MAXIMIZE);
 		ShowCursor(TRUE);
+		SetThreadExecutionState(ES_CONTINUOUS);
 		// Trigger WM_SIZE message
 		RECT Rc;
 		GetWindowRect(ghwndApp, &Rc);
@@ -1972,6 +1977,9 @@ BOOL StartPreview()
     }
 
     gcap.fPreviewing = TRUE;
+	// if fullscreen require display again
+	if (GetWindowLong(ghwndApp, GWL_STYLE) & WS_POPUP)
+		SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
     return TRUE;
 }
 
@@ -2004,7 +2012,7 @@ BOOL StopPreview()
 
     // get rid of menu garbage
     InvalidateRect(ghwndApp, NULL, TRUE);
-
+	SetThreadExecutionState(ES_CONTINUOUS);
     return TRUE;
 }
 
