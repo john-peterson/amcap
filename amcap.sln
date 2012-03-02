@@ -1,11 +1,11 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "amcap", "amcap.vcxproj", "{FC4CCFFB-B207-0B11-CD35-90435F1F2264}"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 11
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "amcap", "amcap.vcxproj", "{6146A996-2A37-F993-53EA-8E8FE76CA285}"
 	ProjectSection(ProjectDependencies) = postProject
-		{E23E3C74-C479-0C86-19D2-7C73AF67B0AE} = {E23E3C74-C479-0C86-19D2-7C73AF67B0AE}
+		{CEE56889-0750-AE51-7A93-5AB421A2D28A} = {CEE56889-0750-AE51-7A93-5AB421A2D28A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "strmbasd", "BaseClasses\baseclasses.vcxproj", "{E23E3C74-C479-0C86-19D2-7C73AF67B0AE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "strmbasd", "BaseClasses\baseclasses.vcxproj", "{CEE56889-0750-AE51-7A93-5AB421A2D28A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{FC4CCFFB-B207-0B11-CD35-90435F1F2264}.Debug|Win32.ActiveCfg = Debug|Win32
-		{FC4CCFFB-B207-0B11-CD35-90435F1F2264}.Debug|Win32.Build.0 = Debug|Win32
-		{FC4CCFFB-B207-0B11-CD35-90435F1F2264}.Release|Win32.ActiveCfg = Release|Win32
-		{FC4CCFFB-B207-0B11-CD35-90435F1F2264}.Release|Win32.Build.0 = Release|Win32
-		{E23E3C74-C479-0C86-19D2-7C73AF67B0AE}.Debug|Win32.ActiveCfg = Debug|Win32
-		{E23E3C74-C479-0C86-19D2-7C73AF67B0AE}.Debug|Win32.Build.0 = Debug|Win32
-		{E23E3C74-C479-0C86-19D2-7C73AF67B0AE}.Release|Win32.ActiveCfg = Release|Win32
-		{E23E3C74-C479-0C86-19D2-7C73AF67B0AE}.Release|Win32.Build.0 = Release|Win32
+		{6146A996-2A37-F993-53EA-8E8FE76CA285}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6146A996-2A37-F993-53EA-8E8FE76CA285}.Debug|Win32.Build.0 = Debug|Win32
+		{6146A996-2A37-F993-53EA-8E8FE76CA285}.Release|Win32.ActiveCfg = Release|Win32
+		{6146A996-2A37-F993-53EA-8E8FE76CA285}.Release|Win32.Build.0 = Release|Win32
+		{CEE56889-0750-AE51-7A93-5AB421A2D28A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CEE56889-0750-AE51-7A93-5AB421A2D28A}.Debug|Win32.Build.0 = Debug|Win32
+		{CEE56889-0750-AE51-7A93-5AB421A2D28A}.Release|Win32.ActiveCfg = Release|Win32
+		{CEE56889-0750-AE51-7A93-5AB421A2D28A}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

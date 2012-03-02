@@ -49,7 +49,7 @@ HACCEL ghAccel=0;
 HFONT  ghfontApp=0;
 TEXTMETRIC gtm={0};
 TCHAR gszAppName[]=TEXT("AMCap");
-DWORD ghwndStyle = (WS_OVERLAPPEDWINDOW | WS_SYSMENU | WS_VISIBLE) & ~(WS_THICKFRAME);
+DWORD ghwndStyle = (WS_OVERLAPPEDWINDOW|WS_SYSMENU|WS_VISIBLE);
 HWND ghwndApp=0, ghwndStatus=0;
 HMENU ghmenuApp=0;
 BOOL bIsZoomed;
