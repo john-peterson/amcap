@@ -1,0 +1,1 @@
+bash -c 'verdate=$(date -u -d@`git log -n1 --format=%%at HEAD` +%%FT%%TZ); ver=$(git log -n1 --format=%%H HEAD); printf "#define VER \"$ver\"\n#define VER_DATE \"$verdate\"" ^>rev.h;

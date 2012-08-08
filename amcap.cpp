@@ -6,23 +6,27 @@
 //
 // Copyright (c) Microsoft Corporation.  All rights reserved.
 //------------------------------------------------------------------------------
-
-#include <streams.h>
-
-#include <windows.h>
+#include <atlbase.h>
+#include <commdlg.h>
 #include <dbt.h>
-#include <mmreg.h>
-#include <msacm.h>
 #include <fcntl.h>
 #include <io.h>
+#include <mmreg.h>
+#include <msacm.h>
 #include <stdio.h>
-#include <commdlg.h>
+#include <windows.h>
+// atl
 #include <atlbase.h>
-#include "stdafx.h"
+#include <atlstr.h>
+//strmbasd
+#include <streams.h>
+//project
 #include "amcap.h"
-#include "status.h"
 #include "crossbar.h"
+#include "rev.h"
 #include "SampleCGB.h"
+#include "status.h"
+#include "stdafx.h"
 
 //------------------------------------------------------------------------------
 // Macros
@@ -39,7 +43,6 @@
 #ifdef  DEBUG
 #define REGISTER_FILTERGRAPH
 #endif
-
 
 //------------------------------------------------------------------------------
 // Global data
@@ -121,8 +124,6 @@ struct _capstuff
     HMENU hMenuPopup;
     int iNumVCapDevices;
 } gcap;
-
-
 
 // implements IAMCopyCaptureFileProgress
 //
@@ -219,7 +220,6 @@ void OnClose();
 HRESULT AddGraphToRot(IUnknown *pUnkGraph, DWORD *pdwRegister);
 void RemoveGraphFromRot(DWORD pdwRegister);
 
-
 //------------------------------------------------------------------------------
 // Name: SetAppCaption()
 // Desc: Set the caption to be the application name followed by the capture file
@@ -235,6 +235,38 @@ void SetAppCaption()
         lstrcat(tach, gcap.szCaptureFile);
     }
     SetWindowText(ghwndApp, tach);
+}
+
+//print help
+void usage() {
+	wprintf(L"Usage: amcap [-v]\n-v, --version\tprint version\n");
+}
+
+//parse arguments
+bool parse_arguments() {
+	LPWSTR *argv;
+	int argc;
+
+	argv = CommandLineToArgvW(GetCommandLine(), &argc);
+	if (argv == NULL)
+	{
+		wprintf(L"Unable to parse command line\n");
+		return false;
+	}
+
+	if (argc > 1) {
+		CString s(argv[1]);
+		if (!s.Compare(L"-v") || !s.Compare(L"--version")) {
+			wprintf(L"%s %s\n", TEXT(VER_DATE), TEXT(VER));
+		} else {
+			wprintf(L"Invalid argument.\n\n");
+			usage();
+		}
+		return false;
+	}
+
+	LocalFree(argv);
+	return true;
 }
 
 
@@ -460,6 +492,8 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 {
     MSG msg;
 
+	if (!parse_arguments()) return 0;
+
     /* Call initialization procedure */
     if(!AppInit(hInst,hPrev,sw))
         return FALSE;
@@ -491,7 +525,6 @@ int PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
     CoUninitialize();
     return ((int) msg.wParam);
 }
-
 
 /*----------------------------------------------------------------------------*\
 |   AppWndProc( hwnd, uiMessage, wParam, lParam )                              |
@@ -3119,7 +3152,6 @@ void ChooseAudioFormat()
     DeleteMediaType(pmt);
 }
 
-
 /*----------------------------------------------------------------------------*\
 |    AppCommand()
 |
@@ -3769,7 +3801,6 @@ LONG PASCAL AppCommand(HWND hwnd, unsigned msg, WPARAM wParam, LPARAM lParam)
     }
     return 0L;
 }
-
 
 /*----------------------------------------------------------------------------*\
 |   ErrMsg - Opens a Message box with a error message in it.  The user can     |
