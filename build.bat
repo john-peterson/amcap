@@ -8,7 +8,7 @@ set PLATFORM=%2
 set PROJECT=%3
 @if "%4" neq "" (set ACTION=%4) else (set ACTION=Build)
 if %PLATFORM% == x64 (set MACHINE=x64) else (set MACHINE=x86)
-call "%VS100COMNTOOLS%..\..\VC\vcvarsall.bat" %MACHINE%
+call "%VS120COMNTOOLS%..\..\VC\vcvarsall.bat" %MACHINE%
 echo on
 devenv /nologo amcap.sln /Project %PROJECT% /%ACTION% "%CONFIG%|%PLATFORM%"
 @if %ERRORLEVEL% neq 0 (
