@@ -356,8 +356,6 @@ BOOL AppInit(HINSTANCE hInst, HINSTANCE hPrev, int sw)
     if(ghwndStatus == NULL)
         return(FALSE);
 
-    ShowWindow(ghwndApp,sw);
-
     // Read the capture file name from win.ini
     GetProfileString(TEXT("annie"), TEXT("CaptureFile"), TEXT(""),
         gcap.szCaptureFile,
@@ -458,6 +456,9 @@ BOOL AppInit(HINSTANCE hInst, HINSTANCE hPrev, int sw)
     }
 
     SetAppCaption();
+
+    ShowWindow(ghwndApp,sw);
+
     return TRUE;
 }
 
